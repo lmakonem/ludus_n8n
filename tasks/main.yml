@@ -78,7 +78,16 @@
     - docker_check.rc != 0
     - ansible_distribution | lower == "debian"
 
-- name: Add Docker APT repository (Debian)
+- name: Remove any existing Docker APT repo file
+  ansible.builtin.file:
+    path: /etc/apt/sources.list.d/docker.list
+    state: absent
+  become: yes
+  when:
+    - docker_check.rc != 0
+    - ansible_distribution | lower == "debian"
+
+- name: Add Docker APT repository (Debian, amd64 only)
   ansible.builtin.copy:
     dest: /etc/apt/sources.list.d/docker.list
     mode: "0644"
