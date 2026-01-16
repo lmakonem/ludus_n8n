@@ -6,6 +6,10 @@ Ludus role repo that deploys:
 - n8n + Postgres (Docker)
 
 Author: Howard Mukanda (@ITSecurityLabs on YouTube and X)
+<img width="1351" height="719" alt="image" src="https://github.com/user-attachments/assets/4e35d382-6d1a-4622-affb-a1fda4bbb531" />
+
+<img width="2554" height="1320" alt="image" src="https://github.com/user-attachments/assets/09137f1a-63fa-4e2a-a57b-07faa80f6a8c" />
+
 
 ## What it does
 
