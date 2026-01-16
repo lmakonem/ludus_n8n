@@ -1,0 +1,11 @@
+---
+name: ludus_wazuh_n8n
+description: Deploys Wazuh single-node (Docker) and n8n + Postgres (Docker) on a Linux VM in a Ludus lab.
+author: Howard Mukanda (@ITSecurityLabs)
+license: MIT
+tags:
+  - wazuh
+  - n8n
+  - docker
+  - siem
+  - automation

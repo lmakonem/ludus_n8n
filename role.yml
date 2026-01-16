@@ -1,0 +1,4 @@
+---
+roles:
+  - name: ludus_wazuh_n8n
+    path: roles/ludus_wazuh_n8n
