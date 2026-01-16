@@ -51,7 +51,7 @@ When run on a Linux VM in Ludus, this role:
 ## 📦 Adding the role to Ludus
 
 ``` bash
-ludus ansible roles add https://github.com/<your-username>/ludus_wazuh_n8n.git
+ludus ansible roles add https://github.com/lmakonem/ludus_wazuh_n8n.git
 ```
 
 ### Confirm it shows up
