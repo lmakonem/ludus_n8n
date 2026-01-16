@@ -165,7 +165,8 @@ ludus:
 
 ```bash
 ludus range config set -f config.yml
-ludus range deploy -t user-defined-roles
+ludus range deploy
+ludus range logs -f
 ```
 
 This will:
@@ -175,10 +176,3 @@ This will:
 
 ---
 
-## 🔑 Exporting the Ludus API Key
-
-```bash
-export LUDUS_API_KEY=$(cat /opt/ludus/install/root-api-key)
-```
-
-Use this key for bootstrap/admin tasks such as creating admin users or generating new user API keys.
