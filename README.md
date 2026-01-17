@@ -31,44 +31,42 @@ flowchart LR
     Agent --> WMgr
 ```
 
----
-
 <img width="1351" height="719" alt="image" src="https://github.com/user-attachments/assets/4e35d382-6d1a-4622-affb-a1fda4bbb531" />
-
 <img width="2554" height="1320" alt="image" src="https://github.com/user-attachments/assets/09137f1a-63fa-4e2a-a57b-07faa80f6a8c" />
 
-## 🧱 What this role does
+---
+
+## 🧱 What This Role Does
 
 When run on a Linux VM in Ludus, this role:
 
-* Installs Docker Engine and the Docker Compose plugin if needed.
-* Sets `vm.max_map_count=262144` for Wazuh indexer stability.
-* Deploys **n8n** with:
+- Installs Docker Engine and the Docker Compose plugin if needed
+- Sets `vm.max_map_count=262144` for Wazuh indexer stability
+- Deploys **n8n** with:
+  - A dedicated Postgres 16 container
+  - Persistent volumes for Postgres and `/home/node/.n8n`
+  - `N8N_SECURE_COOKIE=false` for HTTP access in labs
+- Deploys **Wazuh 4.9.0 single-node** using the official `wazuh-docker` repository:
+  - Generates indexer certificates
+  - Starts manager, indexer, and dashboard containers
+- Connects n8n to the Wazuh Docker network so it can query the indexer internally
 
-  * A dedicated **Postgres 16** container
-  * Persistent volumes for Postgres and `/home/node/.n8n`
-  * `N8N_SECURE_COOKIE=false` for HTTP access in labs
-* Deploys **Wazuh 4.9.0 single-node** using the official `wazuh-docker` repository:
-
-  * Generates indexer certificates
-  * Starts manager, indexer, and dashboard containers
-* Connects **n8n** to the **Wazuh Docker network** so it can query the indexer internally
+This gives students a self-contained **Wazuh + n8n environment** for building automation workflows against Wazuh alerts and indexer data.
 
 ---
 
 ## 🔧 Prerequisites
 
-* A running Ludus instance with CLI access
-* Proxmox templates:
-
-  * debian-12-x64-server-template
-  * ubuntu-22.04-x64-server-template
-  * win11-22h2-x64-enterprise-template
-* Ludus CLI authenticated for your user (see Ludus docs for initial setup)
+- A running Ludus instance with CLI access
+- Proxmox templates:
+  - `debian-12-x64-server-template`
+  - `ubuntu-22.04-x64-server-template`
+  - `win11-22h2-x64-enterprise-template`
+- Ludus CLI authenticated for your user (see Ludus docs for initial setup)
 
 ---
 
-## 📦 Install required Ansible roles
+## 📦 Install Required Ansible Roles
 
 On the Ludus host:
 
@@ -88,14 +86,16 @@ ludus ansible roles list
 
 You should see at least:
 
-```
+```text
 ludus_wazuh_n8n
 aleemladha.ludus_wazuh_agent
 ```
 
+The agent role comes from Ansible Galaxy and is designed to work with Ludus by taking a `ludus_wazuh_siem_server` variable that points at the Wazuh manager.
+
 ---
 
-## 🧩 Sample Ludus range config
+## 🧩 Sample Ludus Range Configuration
 
 Create `config.yml` on the Ludus host:
 
@@ -133,7 +133,9 @@ ludus:
     roles:
       - aleemladha.ludus_wazuh_agent
     role_vars:
-      wazuh_manager_ip: "10.{{ range_id }}.20.10"
+      # IMPORTANT: Ludus renders the manager IP as 10.<range_id>.20.10.
+      # Do NOT place a non-numeric range_id directly into an IP octet.
+      ludus_wazuh_siem_server: "10.{{ range_id }}.20.10"
       wazuh_agent_version: "4.9.0"
       wazuh_agent_groups:
         - "default"
@@ -153,7 +155,7 @@ ludus:
     roles:
       - aleemladha.ludus_wazuh_agent
     role_vars:
-      wazuh_manager_ip: "10.{{ range_id }}.20.10"
+      ludus_wazuh_siem_server: "10.{{ range_id }}.20.10"
       wazuh_agent_version: "4.9.0"
       wazuh_agent_groups:
         - "default"
@@ -161,7 +163,25 @@ ludus:
 
 ---
 
-## 🚀 Apply and deploy
+## ⚠️ Template Note
+
+In Ludus, `range_id` must be numeric when embedded into an IP address.  
+If your range ID is something like `userrange`, the rendered address will be invalid:
+
+```text
+ERROR: Could not resolve hostname: 10.userrange.20.10
+```
+
+For teaching, you can either:
+
+- Use a numeric range ID (e.g. `10`) so the IP becomes `10.10.20.10`, or
+- Replace the dynamic IP with a static one that matches your lab network
+
+Your final configuration **must produce a valid IPv4 address**.
+
+---
+
+## 🚀 Apply and Deploy
 
 ```bash
 ludus range config set -f config.yml
@@ -171,8 +191,81 @@ ludus range logs -f
 
 This will:
 
-* Provision a Debian server that runs Wazuh single-node (Docker) and n8n + Postgres (Docker)
-* Provision Windows 11 and Ubuntu clients with Wazuh agents pointing at the manager at `10.{{ range_id }}.20.10`
+- Provision a Debian server running Wazuh single-node (Docker) and n8n + Postgres (Docker)
+- Provision Windows 11 and Ubuntu clients with Wazuh agents pointing at the manager
 
 ---
 
+## 🔍 Verifying Wazuh Agent Registration
+
+### On the Wazuh + n8n Server
+
+```bash
+docker ps
+```
+
+Confirm the following containers are running:
+
+- `single-node-wazuh.indexer-1`
+- `single-node-wazuh.manager-1`
+- `single-node-wazuh.dashboard-1`
+- `n8n`
+- `n8n_postgres`
+
+The manager should expose ports **1514**, **1515**, and **55000** on `0.0.0.0`.
+
+---
+
+### On the Windows Client
+
+Confirm the agent is installed:
+
+```powershell
+Get-Service Wazuh*
+```
+
+Check the agent log:
+
+```text
+C:\Program Files (x86)\ossec-agent\logs\ossec.log
+```
+
+If needed, force a redeploy:
+
+```powershell
+Stop-Service WazuhSvc -ErrorAction SilentlyContinue
+```
+
+Then redeploy:
+
+```bash
+ludus range deploy -t user-defined-roles
+```
+
+---
+
+### On the Ubuntu Client
+
+```bash
+systemctl status wazuh-agent
+sudo grep -A4 "<server>" /var/ossec/etc/ossec.conf
+```
+
+Ensure the `<address>` matches the Wazuh manager IP.
+
+---
+
+## 🧪 Lab Usage Ideas
+
+Once Wazuh and n8n are operational:
+
+- Query the Wazuh indexer for:
+  - High-severity alerts
+  - Brute-force login attempts
+  - Ransomware-like file activity
+- Use n8n to:
+  - Send alerts to Slack / Teams / Discord
+  - Create ITSM tickets
+  - Trigger additional scans or scripts on endpoints
+
+The Dockerized Wazuh stack and n8n automation server together provide a **self-contained environment** for practicing SIEM triage, alert enrichment, and automated response.
