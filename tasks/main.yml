@@ -1,5 +1,5 @@
 ---
-# Ludus role: deploy Wazuh single-node + n8n (Docker)
+# Ludus role: deploy n8n
 
 ######################################################
 # Pre-clean any broken Docker repo
@@ -21,14 +21,6 @@
       - lsb-release
     state: present
     update_cache: yes
-  become: yes
-
-- name: Set vm.max_map_count for Wazuh
-  ansible.builtin.sysctl:
-    name: vm.max_map_count
-    value: "262144"
-    state: present
-    reload: yes
   become: yes
 
 ######################################################
@@ -141,7 +133,7 @@
   ignore_errors: yes
 
 ############################################
-# Create base lab directory
+# Create base lab directory (n8n only)
 ############################################
 - name: Create lab directory structure
   ansible.builtin.file:
@@ -153,10 +145,9 @@
   loop:
     - "/home/{{ ansible_user_id }}/cyber-lab"
     - "/home/{{ ansible_user_id }}/cyber-lab/n8n"
-    - "/home/{{ ansible_user_id }}/cyber-lab/wazuh"
 
 ######################################################
-# Deploy n8n + Postgres (Docker, doc-aligned)
+# Deploy n8n + Postgres
 ######################################################
 - name: Remove any existing n8n containers
   ansible.builtin.command: docker rm -f n8n n8n_postgres
@@ -289,44 +280,4 @@
   ansible.builtin.command: docker compose up -d
   args:
     chdir: "/home/{{ ansible_user_id }}/cyber-lab/n8n"
-  become: yes
-
-######################################################
-# Deploy Wazuh single-node (Docker)
-######################################################
-- name: Clone or update wazuh-docker repo
-  ansible.builtin.git:
-    repo: "{{ wazuh_repo_url }}"
-    dest: "/home/{{ ansible_user_id }}/cyber-lab/wazuh/wazuh-docker"
-    version: "{{ wazuh_version }}"
-    update: yes
-  become: no
-
-- name: Generate Wazuh indexer certificates
-  ansible.builtin.command: docker compose -f generate-indexer-certs.yml run --rm generator
-  args:
-    chdir: "/home/{{ ansible_user_id }}/cyber-lab/wazuh/wazuh-docker/single-node"
-  become: yes
-
-- name: Start Wazuh single-node stack
-  ansible.builtin.command: docker compose up -d
-  args:
-    chdir: "/home/{{ ansible_user_id }}/cyber-lab/wazuh/wazuh-docker/single-node"
-  become: yes
-
-######################################################
-# Connect n8n to Wazuh Docker network
-######################################################
-- name: Find Wazuh single-node Docker network
-  ansible.builtin.command: docker network ls --filter "name=single-node" --format "{{ '{{' }}.Name{{ '}}' }}"
-  register: wazuh_net
-  changed_when: false
-  failed_when: false
-  become: yes
-
-- name: Connect n8n container to Wazuh network
-  ansible.builtin.command: docker network connect "{{ wazuh_net.stdout_lines[0] }}" n8n
-  when:
-    - wazuh_net.stdout_lines | length > 0
-  ignore_errors: yes
   become: yes
