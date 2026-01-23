@@ -172,7 +172,7 @@ ludus:
       wazuh_manager_host: "10.2.20.11"
 ```
 
-This example deploys a single n8n server plus optional Windows and Ubuntu clients that you can use as traffic generators or automation targets; no Wazuh manager or agent variables are required for this role.
+This example deploys a single n8n server plus optional Windows and Ubuntu clients that you can use as traffic generators or automation targets;  Wazuh manager and agents are added to windows and linux
 
 ---
 
