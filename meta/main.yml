@@ -1,6 +1,6 @@
 ---
 galaxy_info:
-  role_name: ludus_wazuh_n8n
+  role_name: ludus_n8n
   author: Howard Mukanda (@ITSecurityLabs)
   description: Deploys Wazuh single-node (Docker) and n8n + Postgres (Docker) on a Ludus Linux VM.
   license: MIT
