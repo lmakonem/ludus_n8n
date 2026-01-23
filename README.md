@@ -34,7 +34,7 @@ flowchart LR
 ![n8n + Wazuh overview 1](https://github.com/user-attachments/assets/4e35d382-6d1a-4622-affb-a1fda4bbb531)
 ![n8n + Wazuh overview 2](https://github.com/user-attachments/assets/09137f1a-63fa-4e2a-a57b-07faa80f6a8c)
 
-The diagram still shows a full Wazuh + n8n environment, which is useful if you pair this role with an external Wazuh deployment or a different Ludus role that provides Wazuh.
+The diagram shows a full Wazuh + n8n environment, which is useful if you pair this role with an external Wazuh deployment or a different Ludus role that provides Wazuh, otherwise n8n can be deployed as a standalone VM without wazuh.
 
 ---
 
