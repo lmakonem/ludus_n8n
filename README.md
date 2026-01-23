@@ -98,13 +98,30 @@ Create `config.yml` on the Ludus host:
 # yaml-language-server: $schema=https://docs.ludus.cloud/schemas/range-config.json
 
 ludus:
-  # n8n server
+  # Wazuh SIEM server (Unified XDR + SOCFORTRESS rules)
+  - vm_name: "{{ range_id }}-wazuh-siem"
+    hostname: "{{ range_id }}-wazuh-siem"
+    template: ubuntu-22.04-x64-server-template
+    vlan: 20
+    ip_last_octet: 11             # -> 10.2.20.11 in current range [file:112]
+    ram_gb: 8
+    cpus: 4
+    linux: true
+    testing:
+      snapshot: false
+      block_internet: false
+    roles:
+      - aleemladha.wazuh_server_install
+    role_vars:
+      wazuh_admin_password: "WazuhLab2026*"
+
+  # n8n + Postgres automation server
   - vm_name: "{{ range_id }}-n8n-server"
     hostname: "{{ range_id }}-n8n-server"
     template: debian-12-x64-server-template
     vlan: 20
-    ip_last_octet: 10
-    ram_gb: 8
+    ip_last_octet: 10             # -> 10.2.20.10 [file:112]
+    ram_gb: 6
     cpus: 4
     linux: {}
     testing:
@@ -113,31 +130,47 @@ ludus:
     roles:
       - ludus_n8n
 
-  # (Optional) Windows 11 client
+  # Windows 11 client with Wazuh agent
   - vm_name: "{{ range_id }}-win11-client-1"
     hostname: "{{ range_id }}-win11-client-1"
     template: win11-22h2-x64-enterprise-template
     vlan: 20
-    ip_last_octet: 20
+    ip_last_octet: 20             # -> 10.2.20.20 [file:112]
     ram_gb: 4
     cpus: 2
     windows: {}
     testing:
       snapshot: false
       block_internet: false
+    roles:
+      - aleemladha.ludus_wazuh_agent
+    role_vars:
+      # MSI package exactly as before
+      wazuh_agent_install_package: "https://packages.wazuh.com/4.x/windows/wazuh-agent-4.9.0-1.msi"
+      # Public manager variable (from README) [web:57]
+      ludus_wazuh_siem_server: "10.2.20.11"
+      # Internal variants the role code expects in different places
+      wazuhmanagerhost: "10.2.20.11"      # what Ludus has been flattening [file:112]
+      wazuh_manager_host: "10.2.20.11"    # what windows.yml is referencing in the error [file:112]
 
-  # (Optional) Ubuntu 22.04 client
+  # Ubuntu 22.04 client with Wazuh agent
   - vm_name: "{{ range_id }}-ubuntu-client-1"
     hostname: "{{ range_id }}-ubuntu-client-1"
     template: ubuntu-22.04-x64-server-template
     vlan: 20
-    ip_last_octet: 21
+    ip_last_octet: 21             # -> 10.2.20.21 [file:112]
     ram_gb: 4
     cpus: 2
     linux: {}
     testing:
       snapshot: false
       block_internet: false
+    roles:
+      - aleemladha.ludus_wazuh_agent
+    role_vars:
+      ludus_wazuh_siem_server: "10.2.20.11"
+      wazuhmanagerhost: "10.2.20.11"
+      wazuh_manager_host: "10.2.20.11"
 ```
 
 This example deploys a single n8n server plus optional Windows and Ubuntu clients that you can use as traffic generators or automation targets; no Wazuh manager or agent variables are required for this role.
