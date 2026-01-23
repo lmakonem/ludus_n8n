@@ -173,7 +173,8 @@ ludus:
 ```
 
 This example deploys a single n8n server plus optional Windows and Ubuntu clients that you can use as traffic generators or automation targets;  Wazuh manager and agents are added to windows and linux
-
+<img width="2553" height="1262" alt="image" src="https://github.com/user-attachments/assets/cc1c0e15-cffe-4db3-a55f-0d08bcf03495" />
+`windows wazuh agent`
 ---
 
 ## 🚀 Apply and Deploy
